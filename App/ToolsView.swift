@@ -1,13 +1,14 @@
 
 import SwiftUI
 import Network
+import UIKit
 
 struct ToolsView: View {
     @State private var selectedTool: String?
     @State private var connectionStatus = "جاري الفحص..."
     @State private var isConnected = false
-
     @State private var monitor: NWPathMonitor?
+
     private let queue = DispatchQueue(label: "ALMASIH.NetworkMonitor")
 
     private let tools = [
@@ -76,30 +77,27 @@ struct ToolsView: View {
     }
 
     private func startNetworkMonitor() {
-    stopNetworkMonitor()
+        stopNetworkMonitor()
 
-    let newMonitor = NWPathMonitor()
-    monitor = newMonitor
+        let newMonitor = NWPathMonitor()
+        monitor = newMonitor
 
-    newMonitor.pathUpdateHandler = { path in
-        DispatchQueue.main.async {
-            isConnected = path.status == .satisfied
-            connectionStatus = isConnected
-                ? "متصل بالشبكة"
-                : "لا يوجد اتصال بالشبكة"
+        newMonitor.pathUpdateHandler = { path in
+            DispatchQueue.main.async {
+                isConnected = path.status == .satisfied
+                connectionStatus = isConnected
+                    ? "متصل بالشبكة"
+                    : "لا يوجد اتصال بالشبكة"
+            }
         }
+
+        newMonitor.start(queue: queue)
     }
 
-            newMonitor.start(queue: queue)
+    private func stopNetworkMonitor() {
+        monitor?.cancel()
+        monitor = nil
     }
-
-
-
-private func stopNetworkMonitor() {
-    monitor?.cancel()
-    monitor = nil
-}
-    
 
     @ViewBuilder
     private func toolDetails(_ tool: String) -> some View {
@@ -109,8 +107,10 @@ private func stopNetworkMonitor() {
                 case "فحص الاتصال":
                     Image(systemName: "wifi")
                         .font(.system(size: 45))
+
                     Text(connectionStatus)
                         .font(.title2.bold())
+
                     Text("هذه الأداة تفحص وجود اتصال بالشبكة، ولا تقيس سرعة الإنترنت.")
                         .foregroundStyle(.gray)
 
@@ -120,7 +120,10 @@ private func stopNetworkMonitor() {
 
                 case "مساحة التخزين":
                     if let values = try? URL(fileURLWithPath: NSHomeDirectory())
-                        .resourceValues(forKeys: [.volumeTotalCapacityKey, .volumeAvailableCapacityKey]) {
+                        .resourceValues(forKeys: [
+                            .volumeTotalCapacityKey,
+                            .volumeAvailableCapacityKey
+                        ]) {
                         detailRow("المساحة الكلية", formatBytes(values.volumeTotalCapacity))
                         detailRow("المساحة المتاحة", formatBytes(values.volumeAvailableCapacity))
                     } else {
@@ -180,17 +183,26 @@ private func stopNetworkMonitor() {
 
     private var batteryState: String {
         UIDevice.current.isBatteryMonitoringEnabled = true
+
         switch UIDevice.current.batteryState {
-        case .charging: return "قيد الشحن"
-        case .full: return "ممتلئة"
-        case .unplugged: return "غير موصولة بالشاحن"
-        default: return "غير معروف"
+        case .charging:
+            return "قيد الشحن"
+        case .full:
+            return "ممتلئة"
+        case .unplugged:
+            return "غير موصولة بالشاحن"
+        default:
+            return "غير معروف"
         }
     }
 
     private func formatBytes(_ bytes: Int?) -> String {
         guard let bytes else { return "غير متاح" }
-        return ByteCountFormatter.string(fromByteCount: Int64(bytes), countStyle: .file)
+
+        return ByteCountFormatter.string(
+            fromByteCount: Int64(bytes),
+            countStyle: .file
+        )
     }
 }
 
