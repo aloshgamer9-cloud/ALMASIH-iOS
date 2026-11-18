@@ -20,19 +20,19 @@ struct ContentView: View {
                 header
 
                 Group {
-                    if selectedTab == 1 {
-    ModulesView()
-} else if selectedTab == 3 {
-    ToolsView()
-} else if selectedTab == 4 {
-    SettingsView()
-} else if selectedTab == 0 {
-    ToolsView()
-} else if selectedTab == 0 {
-    homeContent
-} else {
-    comingSoonContent
-}
+                    switch selectedTab {
+                    case 0:
+                        homeContent
+                    case 1:
+                        ModulesView()
+                    case 2:
+                        MonitorView()
+                    case 3:
+                        ToolsView()
+                    case 4:
+                        SettingsView()
+                    default:
+                        homeContent
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -111,24 +111,6 @@ struct ContentView: View {
         .clipShape(RoundedRectangle(cornerRadius: 20))
     }
 
-    private var comingSoonContent: some View {
-        VStack(spacing: 14) {
-            Image(systemName: tabs[selectedTab].1)
-                .font(.system(size: 42))
-                .foregroundStyle(.white)
-
-            Text(tabs[selectedTab].0)
-                .font(.title2.bold())
-                .foregroundStyle(.white)
-
-            Text("هذا القسم قيد التطوير")
-                .foregroundStyle(.gray)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.white.opacity(0.04))
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-    }
-
     private var bottomNavigation: some View {
         HStack(spacing: 0) {
             ForEach(0..<tabs.count, id: \.self) { index in
@@ -142,12 +124,11 @@ struct ContentView: View {
                         Text(tabs[index].0)
                             .font(.system(size: 9))
                     }
-                    .foregroundStyle(
-                        selectedTab == index ? .white : .gray
-                    )
+                    .foregroundStyle(selectedTab == index ? .white : .gray)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                 }
+                .buttonStyle(.plain)
             }
         }
         .background(Color.white.opacity(0.07))
