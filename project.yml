@@ -12,6 +12,7 @@ targets:
     platform: iOS
     sources:
       - path: App
+      - path: SettingsView.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.almasih.ios
