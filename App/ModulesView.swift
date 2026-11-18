@@ -82,7 +82,7 @@ struct ModulesView: View {
                 case "مراقبة النظام":
                     info("نوع الجهاز", UIDevice.current.model)
                     info("إصدار iOS", UIDevice.current.systemVersion)
-                    info("معرّف النظام", UIDevice.current.systemName)
+                    info("النظام", UIDevice.current.systemName)
 
                 case "مراقبة الشبكة":
                     NetworkModuleView()
@@ -90,16 +90,20 @@ struct ModulesView: View {
                 case "تحليل التطبيقات":
                     Image(systemName: "app.badge")
                         .font(.system(size: 45))
+
                     Text("معلومات التطبيقات")
                         .font(.title2.bold())
-                    Text("يعرض iOS قيوداً على قراءة بيانات التطبيقات الأخرى وإدارتها.")
+
+                    Text("يفرض iOS قيوداً على قراءة بيانات التطبيقات الأخرى وإدارتها.")
                         .foregroundStyle(.gray)
 
                 case "أدوات النظام":
                     Image(systemName: "gearshape.2")
                         .font(.system(size: 45))
+
                     Text("إعدادات التطبيق")
                         .font(.title2.bold())
+
                     Button("فتح إعدادات ALMASIH") {
                         if let url = URL(string: UIApplication.openSettingsURLString) {
                             UIApplication.shared.open(url)
@@ -110,8 +114,10 @@ struct ModulesView: View {
                 case "مركز الأمان":
                     Image(systemName: "shield.lefthalf.filled")
                         .font(.system(size: 45))
+
                     Text("إرشادات حماية الجهاز")
                         .font(.title2.bold())
+
                     info("التحديثات", "حافظ على تحديث iOS")
                     info("الخصوصية", "راجع أذونات التطبيقات")
                     info("الحسابات", "استخدم كلمات مرور قوية")
@@ -153,8 +159,9 @@ struct ModulesView: View {
 private struct NetworkModuleView: View {
     @State private var status = "جاري الفحص..."
     @State private var connectionType = "غير معروف"
+    @State private var monitor: NWPathMonitor?
 
-    private let monitor = NWPathMonitor()
+    private let queue = DispatchQueue(label: "ALMASIH.ModulesNetwork")
 
     var body: some View {
         VStack(spacing: 16) {
@@ -172,29 +179,42 @@ private struct NetworkModuleView: View {
                 .foregroundStyle(.gray)
         }
         .onAppear {
-            monitor.pathUpdateHandler = { path in
-                DispatchQueue.main.async {
-                    status = path.status == .satisfied
-                        ? "الشبكة متصلة"
-                        : "لا يوجد اتصال"
-
-                    if path.usesInterfaceType(.wifi) {
-                        connectionType = "Wi-Fi"
-                    } else if path.usesInterfaceType(.cellular) {
-                        connectionType = "بيانات الهاتف"
-                    } else if path.usesInterfaceType(.wiredEthernet) {
-                        connectionType = "Ethernet"
-                    } else {
-                        connectionType = "غير معروف"
-                    }
-                }
-            }
-
-            monitor.start(queue: DispatchQueue(label: "ALMASIH.ModulesNetwork"))
+            startMonitoring()
         }
         .onDisappear {
-            monitor.cancel()
+            stopMonitoring()
         }
     }
-}
 
+    private func startMonitoring() {
+        stopMonitoring()
+
+        let newMonitor = NWPathMonitor()
+        monitor = newMonitor
+
+        newMonitor.pathUpdateHandler = { path in
+            DispatchQueue.main.async {
+                status = path.status == .satisfied
+                    ? "الشبكة متصلة"
+                    : "لا يوجد اتصال"
+
+                if path.usesInterfaceType(.wifi) {
+                    connectionType = "Wi-Fi"
+                } else if path.usesInterfaceType(.cellular) {
+                    connectionType = "بيانات الهاتف"
+                } else if path.usesInterfaceType(.wiredEthernet) {
+                    connectionType = "Ethernet"
+                } else {
+                    connectionType = "غير معروف"
+                }
+            }
+        }
+
+        newMonitor.start(queue: queue)
+    }
+
+    private func stopMonitoring() {
+        monitor?.cancel()
+        monitor = nil
+    }
+}
