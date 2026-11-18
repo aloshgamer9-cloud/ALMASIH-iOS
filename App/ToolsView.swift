@@ -97,7 +97,7 @@ private func stopNetworkMonitor() {
     monitor?.cancel()
     monitor = nil
 }
-    }
+    
 
     @ViewBuilder
     private func toolDetails(_ tool: String) -> some View {
