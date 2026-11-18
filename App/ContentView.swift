@@ -22,9 +22,11 @@ struct ContentView: View {
                 Group {
                     if selectedTab == 1 {
     ModulesView()
-} else if selectedTab == 2 {
-    MonitorView()
 } else if selectedTab == 3 {
+    ToolsView()
+} else if selectedTab == 4 {
+    SettingsView()
+} else if selectedTab == 0 {
     ToolsView()
 } else if selectedTab == 0 {
     homeContent
