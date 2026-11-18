@@ -198,6 +198,3 @@ private struct NetworkModuleView: View {
     }
 }
 
-extension String: Identifiable {
-    public var id: String { self }
-}
