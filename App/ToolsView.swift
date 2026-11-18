@@ -7,7 +7,7 @@ struct ToolsView: View {
     @State private var connectionStatus = "جاري الفحص..."
     @State private var isConnected = false
 
-    private let monitor = NWPathMonitor()
+    @State private var monitor: NWPathMonitor?
     private let queue = DispatchQueue(label: "ALMASIH.NetworkMonitor")
 
     private let tools = [
@@ -71,18 +71,32 @@ struct ToolsView: View {
             startNetworkMonitor()
         }
         .onDisappear {
-            monitor.cancel()
+            stopNetworkMonitor()
         }
     }
 
     private func startNetworkMonitor() {
-        monitor.pathUpdateHandler = { path in
-            DispatchQueue.main.async {
-                isConnected = path.status == .satisfied
-                connectionStatus = isConnected ? "متصل بالإنترنت" : "لا يوجد اتصال"
-            }
+    stopNetworkMonitor()
+
+    let newMonitor = NWPathMonitor()
+    monitor = newMonitor
+
+    newMonitor.pathUpdateHandler = { path in
+        DispatchQueue.main.async {
+            isConnected = path.status == .satisfied
+            connectionStatus = isConnected
+                ? "متصل بالشبكة"
+                : "لا يوجد اتصال بالشبكة"
         }
-        monitor.start(queue: queue)
+    }
+
+    newMonitor.start(queue: queue)
+}
+
+private func stopNetworkMonitor() {
+    monitor?.cancel()
+    monitor = nil
+}
     }
 
     @ViewBuilder
