@@ -26,5 +26,20 @@ jobs:
             -sdk iphonesimulator \
             -configuration Debug \
             -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
             build
+
+      - name: Package Simulator App
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent \
+            build/Build/Products/Debug-iphonesimulator/ALMASIH.app \
+            ALMASIH-iOS-Simulator.zip
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ALMASIH-iOS-Simulator
+          path: ALMASIH-iOS-Simulator.zip
+          if-no-files-found: error
+          retention-days: 7
