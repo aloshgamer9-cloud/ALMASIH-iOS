@@ -24,6 +24,8 @@ struct ContentView: View {
     ModulesView()
 } else if selectedTab == 2 {
     MonitorView()
+} else if selectedTab == 3 {
+    ToolsView()
 } else if selectedTab == 0 {
     homeContent
 } else {
