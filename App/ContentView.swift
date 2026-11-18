@@ -21,11 +21,14 @@ struct ContentView: View {
 
                 Group {
                     if selectedTab == 1 {
-                        ModulesView()
-                    } else if selectedTab == 0 {
-                        homeContent
-                    } else {
-                        comingSoonContent
+    ModulesView()
+} else if selectedTab == 2 {
+    MonitorView()
+} else if selectedTab == 0 {
+    homeContent
+} else {
+    comingSoonContent
+}
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
