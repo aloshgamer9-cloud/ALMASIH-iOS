@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-simulator:
     runs-on: macos-latest
 
     steps:
@@ -18,7 +18,7 @@ jobs:
       - name: Generate Xcode Project
         run: xcodegen generate
 
-      - name: Build ALMASIH
+      - name: Build Simulator
         run: |
           xcodebuild \
             -project ALMASIH.xcodeproj \
@@ -26,20 +26,57 @@ jobs:
             -sdk iphonesimulator \
             -configuration Debug \
             -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath build \
+            -derivedDataPath build-simulator \
             CODE_SIGNING_ALLOWED=NO \
             build
 
-      - name: Package Simulator App
+      - name: Package Simulator
         run: |
           ditto -c -k --sequesterRsrc --keepParent \
-            build/Build/Products/Debug-iphonesimulator/ALMASIH.app \
+            build-simulator/Build/Products/Debug-iphonesimulator/ALMASIH.app \
             ALMASIH-iOS-Simulator.zip
 
-      - name: Upload Build Artifact
+      - name: Upload Simulator
         uses: actions/upload-artifact@v4
         with:
           name: ALMASIH-iOS-Simulator
           path: ALMASIH-iOS-Simulator.zip
-          if-no-files-found: error
+          retention-days: 7
+
+  build-unsigned-ipa:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode Project
+        run: xcodegen generate
+
+      - name: Build iPhone
+        run: |
+          xcodebuild \
+            -project ALMASIH.xcodeproj \
+            -scheme ALMASIH \
+            -sdk iphoneos \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build-device \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Package IPA
+        run: |
+          mkdir -p Payload
+          cp -R build-device/Build/Products/Release-iphoneos/ALMASIH.app Payload/
+          ditto -c -k --sequesterRsrc --keepParent Payload ALMASIH-unsigned.ipa
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: ALMASIH-unsigned-IPA
+          path: ALMASIH-unsigned.ipa
           retention-days: 7
