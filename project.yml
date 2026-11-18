@@ -1,0 +1,23 @@
+
+name: ALMASIH
+
+options:
+  bundleIdPrefix: com.almasih
+  deploymentTarget:
+    iOS: "16.0"
+
+targets:
+  ALMASIH:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.almasih.ios
+        PRODUCT_NAME: ALMASIH
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: ALMASIH
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
