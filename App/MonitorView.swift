@@ -1,155 +1,132 @@
 
 import SwiftUI
+import UIKit
 
-struct ContentView: View {
-    @AppStorage("appLanguage") private var appLanguage = "ar"
-    @State private var selectedTab = 0
+struct MonitorView: View {
+    @State private var batteryLevel = "غير متاح"
+    @State private var batteryState = "غير معروف"
 
-    private var isArabic: Bool {
-        appLanguage == "ar"
+    private var deviceName: String {
+        UIDevice.current.model
     }
 
-    private var tabs: [(String, String)] {
-        isArabic ? [
-            ("الرئيسية", "house"),
-            ("الوحدات", "square.grid.2x2"),
-            ("المراقبة", "waveform.path"),
-            ("الأدوات", "wrench.and.screwdriver"),
-            ("الإعدادات", "gearshape")
-        ] : [
-            ("Home", "house"),
-            ("Modules", "square.grid.2x2"),
-            ("Monitor", "waveform.path"),
-            ("Tools", "wrench.and.screwdriver"),
-            ("Settings", "gearshape")
-        ]
+    private var systemVersion: String {
+        UIDevice.current.systemVersion
     }
 
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            VStack(spacing: 16) {
-                header
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    Text("MONITOR")
+                        .font(.largeTitle.bold())
+                        .tracking(3)
+                        .foregroundStyle(.white)
 
-                Group {
-                    switch selectedTab {
-                    case 0:
-                        homeContent
-                    case 1:
-                        ModulesView()
-                    case 2:
-                        MonitorView()
-                    case 3:
-                        ToolsView()
-                    case 4:
-                        SettingsView()
-                    default:
-                        homeContent
-                    }
+                    Text("مراقبة حالة الجهاز")
+                        .foregroundStyle(.gray)
+
+                    monitorCard(
+                        title: "مستوى البطارية",
+                        value: batteryLevel,
+                        symbol: "battery.100"
+                    )
+
+                    monitorCard(
+                        title: "حالة الشحن",
+                        value: batteryState,
+                        symbol: "bolt.fill"
+                    )
+
+                    monitorCard(
+                        title: "نوع الجهاز",
+                        value: deviceName,
+                        symbol: "iphone"
+                    )
+
+                    monitorCard(
+                        title: "إصدار النظام",
+                        value: "iOS \(systemVersion)",
+                        symbol: "gear"
+                    )
+
+                    Text("تعرض هذه الشاشة المعلومات التي يسمح iOS للتطبيق بقراءتها.")
+                        .font(.caption)
+                        .foregroundStyle(.gray)
+                        .padding(.top, 8)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                bottomNavigation
+                .padding()
             }
-            .padding(.horizontal, 18)
-            .padding(.bottom, 10)
         }
-        .environment(\.layoutDirection, isArabic ? .rightToLeft : .leftToRight)
         .preferredColorScheme(.dark)
+        .onAppear {
+            UIDevice.current.isBatteryMonitoringEnabled = true
+            refreshBattery()
+        }
+        .onReceive(NotificationCenter.default.publisher(
+            for: UIDevice.batteryLevelDidChangeNotification
+        )) { _ in
+            refreshBattery()
+        }
+        .onReceive(NotificationCenter.default.publisher(
+            for: UIDevice.batteryStateDidChangeNotification
+        )) { _ in
+            refreshBattery()
+        }
     }
 
-    private var header: some View {
-        HStack {
-            Text("☦︎")
-                .font(.system(size: 34))
+    private func refreshBattery() {
+        let level = UIDevice.current.batteryLevel
+
+        if level >= 0 {
+            batteryLevel = "\(Int(level * 100))%"
+        } else {
+            batteryLevel = "غير متاح"
+        }
+
+        switch UIDevice.current.batteryState {
+        case .charging:
+            batteryState = "قيد الشحن"
+        case .full:
+            batteryState = "ممتلئة"
+        case .unplugged:
+            batteryState = "غير موصولة بالشاحن"
+        case .unknown:
+            batteryState = "غير معروف"
+        @unknown default:
+            batteryState = "غير معروف"
+        }
+    }
+
+    private func monitorCard(
+        title: String,
+        value: String,
+        symbol: String
+    ) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: symbol)
+                .font(.title2)
                 .foregroundStyle(.white)
+                .frame(width: 46, height: 46)
+                .background(Color.white.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
 
-            VStack(alignment: .leading, spacing: 3) {
-                Text("ALMASIH")
-                    .font(.title2.bold())
-                    .tracking(3)
-                    .foregroundStyle(.white)
-
-                Text("ADVANCED iOS PLATFORM")
-                    .font(.system(size: 9))
-                    .tracking(2)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(title)
+                    .font(.caption)
                     .foregroundStyle(.gray)
+
+                Text(value)
+                    .font(.headline)
+                    .foregroundStyle(.white)
             }
 
             Spacer()
-
-            Circle()
-                .fill(Color.green)
-                .frame(width: 8, height: 8)
-
-            Text(isArabic ? "متصل" : "ONLINE")
-                .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(.gray)
         }
-        .padding(.top, 20)
-    }
-
-    private var homeContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(isArabic ? "مرحباً بك" : "Welcome")
-                .font(.largeTitle.bold())
-                .foregroundStyle(.white)
-
-            Text(
-                isArabic
-                ? "منصة ALMASIH للتحكم والمراقبة"
-                : "ALMASIH Monitoring Platform"
-            )
-            .foregroundStyle(.gray)
-
-            Text("SYSTEM CORE")
-                .font(.caption.bold())
-                .tracking(2)
-                .foregroundStyle(.gray)
-
-            HStack {
-                Image(systemName: "cpu")
-                Text("CORE INITIALIZED")
-                Spacer()
-                Text("READY")
-                    .foregroundStyle(.green)
-            }
-            .font(.caption.bold())
-            .foregroundStyle(.white)
-            .padding()
-            .background(Color.white.opacity(0.07))
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(Color.white.opacity(0.04))
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-    }
-
-    private var bottomNavigation: some View {
-        HStack(spacing: 0) {
-            ForEach(0..<tabs.count, id: \.self) { index in
-                Button {
-                    selectedTab = index
-                } label: {
-                    VStack(spacing: 7) {
-                        Image(systemName: tabs[index].1)
-                            .font(.system(size: 19))
-
-                        Text(tabs[index].0)
-                            .font(.system(size: 9))
-                    }
-                    .foregroundStyle(selectedTab == index ? .white : .gray)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                }
-                .buttonStyle(.plain)
-            }
-        }
         .background(Color.white.opacity(0.07))
-        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 }
