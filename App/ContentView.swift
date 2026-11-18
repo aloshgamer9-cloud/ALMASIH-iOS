@@ -2,15 +2,28 @@
 import SwiftUI
 
 struct ContentView: View {
+    @AppStorage("appLanguage") private var appLanguage = "ar"
     @State private var selectedTab = 0
 
-    private let tabs = [
-        ("الرئيسية", "house"),
-        ("الوحدات", "square.grid.2x2"),
-        ("المراقبة", "waveform.path"),
-        ("الأدوات", "wrench.and.screwdriver"),
-        ("الإعدادات", "gearshape")
-    ]
+    private var isArabic: Bool {
+        appLanguage == "ar"
+    }
+
+    private var tabs: [(String, String)] {
+        isArabic ? [
+            ("الرئيسية", "house"),
+            ("الوحدات", "square.grid.2x2"),
+            ("المراقبة", "waveform.path"),
+            ("الأدوات", "wrench.and.screwdriver"),
+            ("الإعدادات", "gearshape")
+        ] : [
+            ("Home", "house"),
+            ("Modules", "square.grid.2x2"),
+            ("Monitor", "waveform.path"),
+            ("Tools", "wrench.and.screwdriver"),
+            ("Settings", "gearshape")
+        ]
+    }
 
     var body: some View {
         ZStack {
@@ -42,6 +55,7 @@ struct ContentView: View {
             .padding(.horizontal, 18)
             .padding(.bottom, 10)
         }
+        .environment(\.layoutDirection, isArabic ? .rightToLeft : .leftToRight)
         .preferredColorScheme(.dark)
     }
 
@@ -69,7 +83,7 @@ struct ContentView: View {
                 .fill(Color.green)
                 .frame(width: 8, height: 8)
 
-            Text("ONLINE")
+            Text(isArabic ? "متصل" : "ONLINE")
                 .font(.system(size: 10, weight: .bold))
                 .foregroundStyle(.gray)
         }
@@ -78,12 +92,16 @@ struct ContentView: View {
 
     private var homeContent: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("مرحباً بك")
+            Text(isArabic ? "مرحباً بك" : "Welcome")
                 .font(.largeTitle.bold())
                 .foregroundStyle(.white)
 
-            Text("منصة ALMASIH للتحكم والمراقبة")
-                .foregroundStyle(.gray)
+            Text(
+                isArabic
+                ? "منصة ALMASIH للتحكم والمراقبة"
+                : "ALMASIH Monitoring Platform"
+            )
+            .foregroundStyle(.gray)
 
             Text("SYSTEM CORE")
                 .font(.caption.bold())
