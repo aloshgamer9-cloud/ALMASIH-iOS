@@ -90,8 +90,13 @@ struct ToolsView: View {
         }
     }
 
-    newMonitor.start(queue: queue)
-}
+            newMonitor.start(queue: queue)
+    }
+
+    private func stopNetworkMonitor() {
+        monitor?.cancel()
+        monitor = nil
+    }
 
 private func stopNetworkMonitor() {
     monitor?.cancel()
