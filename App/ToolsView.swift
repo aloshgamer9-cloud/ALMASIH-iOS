@@ -3,20 +3,26 @@ import SwiftUI
 import Network
 import UIKit
 
+private struct ALMASIHTool: Identifiable {
+    let title: String
+    let icon: String
+
+    var id: String { title }
+}
+
 struct ToolsView: View {
-    @State private var selectedTool: String?
+    @State private var selectedTool: ALMASIHTool?
     @State private var connectionStatus = "جاري الفحص..."
-    @State private var isConnected = false
     @State private var monitor: NWPathMonitor?
 
     private let queue = DispatchQueue(label: "ALMASIH.NetworkMonitor")
 
     private let tools = [
-        ("فحص الاتصال", "wifi"),
-        ("معلومات الجهاز", "iphone"),
-        ("مساحة التخزين", "internaldrive"),
-        ("حالة البطارية", "battery.100"),
-        ("إعدادات التطبيق", "gearshape")
+        ALMASIHTool(title: "فحص الاتصال", icon: "wifi"),
+        ALMASIHTool(title: "معلومات الجهاز", icon: "iphone"),
+        ALMASIHTool(title: "مساحة التخزين", icon: "internaldrive"),
+        ALMASIHTool(title: "حالة البطارية", icon: "battery.100"),
+        ALMASIHTool(title: "إعدادات التطبيق", icon: "gearshape")
     ]
 
     var body: some View {
@@ -28,35 +34,41 @@ struct ToolsView: View {
                     Text("TOOLS")
                         .font(.largeTitle.bold())
                         .tracking(3)
-                        .foregroundStyle(.white)
+                        .foregroundColor(.white)
 
                     Text("مركز أدوات ALMASIH")
-                        .foregroundStyle(.gray)
+                        .foregroundColor(.gray)
 
-                    ForEach(tools, id: \.0) { tool in
+                    ForEach(tools) { tool in
                         Button {
-                            selectedTool = tool.0
+                            selectedTool = tool
                         } label: {
                             HStack(spacing: 15) {
-                                Image(systemName: tool.1)
+                                Image(systemName: tool.icon)
                                     .font(.title2)
-                                    .foregroundStyle(.white)
+                                    .foregroundColor(.white)
                                     .frame(width: 48, height: 48)
                                     .background(Color.white.opacity(0.1))
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .clipShape(
+                                        RoundedRectangle(cornerRadius: 12)
+                                    )
 
-                                Text(tool.0)
-                                    .foregroundStyle(.white)
+                                Text(tool.title)
+                                    .foregroundColor(.white)
                                     .font(.headline)
 
                                 Spacer()
 
                                 Image(systemName: "chevron.left")
-                                    .foregroundStyle(.gray)
+                                    .foregroundColor(.gray)
                             }
                             .padding()
-                            .background(Color.white.opacity(0.06))
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .frame(maxWidth: .infinity)
+                            .contentShape(Rectangle())
+                            .background(Color.white.opacity(0.07))
+                            .clipShape(
+                                RoundedRectangle(cornerRadius: 16)
+                            )
                         }
                         .buttonStyle(.plain)
                     }
@@ -65,27 +77,171 @@ struct ToolsView: View {
             }
         }
         .sheet(item: $selectedTool) { tool in
-            toolDetails(tool)
+            NavigationStack {
+                detailContent(for: tool)
+                    .padding()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.black)
+                    .foregroundColor(.white)
+                    .navigationTitle(tool.title)
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("إغلاق") {
+                                selectedTool = nil
+                            }
+                        }
+                    }
+            }
+            .preferredColorScheme(.dark)
         }
-        .preferredColorScheme(.dark)
         .onAppear {
-            startNetworkMonitor()
+            UIDevice.current.isBatteryMonitoringEnabled = true
+            startMonitoring()
         }
         .onDisappear {
-            stopNetworkMonitor()
+            stopMonitoring()
+        }
+        .preferredColorScheme(.dark)
+    }
+
+    @ViewBuilder
+    private func detailContent(for tool: ALMASIHTool) -> some View {
+        VStack(spacing: 20) {
+            switch tool.title {
+
+            case "فحص الاتصال":
+                Image(systemName: "wifi")
+                    .font(.system(size: 45))
+
+                Text(connectionStatus)
+                    .font(.title2.bold())
+
+                Text("يعرض هذا الفحص حالة اتصال الشبكة فقط.")
+                    .foregroundColor(.gray)
+
+            case "معلومات الجهاز":
+                infoRow("الجهاز", UIDevice.current.model)
+                infoRow("النظام", UIDevice.current.systemName)
+                infoRow("إصدار iOS", UIDevice.current.systemVersion)
+
+            case "مساحة التخزين":
+                storageInformation
+
+            case "حالة البطارية":
+                batteryInformation
+
+            case "إعدادات التطبيق":
+                Button {
+                    if let url = URL(
+                        string: UIApplication.openSettingsURLString
+                    ) {
+                        UIApplication.shared.open(url)
+                    }
+                } label: {
+                    Label(
+                        "فتح إعدادات التطبيق",
+                        systemImage: "gearshape"
+                    )
+                    .foregroundColor(.white)
+                    .padding()
+                    .background(Color.white.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+
+            default:
+                Text("الأداة غير متاحة")
+            }
+
+            Spacer()
         }
     }
 
-    private func startNetworkMonitor() {
-        stopNetworkMonitor()
+    private var storageInformation: some View {
+        let values = try? URL(
+            fileURLWithPath: NSHomeDirectory()
+        ).resourceValues(forKeys: [
+            .volumeTotalCapacityKey,
+            .volumeAvailableCapacityKey
+        ])
+
+        return VStack(spacing: 15) {
+            infoRow(
+                "المساحة الكلية",
+                formatBytes(values?.volumeTotalCapacity)
+            )
+
+            infoRow(
+                "المساحة المتاحة",
+                formatBytes(values?.volumeAvailableCapacity)
+            )
+        }
+    }
+
+    private var batteryInformation: some View {
+        let level = UIDevice.current.batteryLevel
+
+        let percentage = level < 0
+            ? "غير متاح"
+            : "\(Int(level * 100))%"
+
+        let state: String
+
+        switch UIDevice.current.batteryState {
+        case .charging:
+            state = "قيد الشحن"
+        case .full:
+            state = "ممتلئة"
+        case .unplugged:
+            state = "غير موصولة بالشاحن"
+        default:
+            state = "غير معروف"
+        }
+
+        return VStack(spacing: 15) {
+            infoRow("مستوى البطارية", percentage)
+            infoRow("حالة الشحن", state)
+        }
+    }
+
+    private func infoRow(
+        _ title: String,
+        _ value: String
+    ) -> some View {
+        HStack {
+            Text(title)
+                .foregroundColor(.gray)
+
+            Spacer()
+
+            Text(value)
+                .foregroundColor(.white)
+        }
+        .padding()
+        .background(Color.white.opacity(0.07))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func formatBytes(_ bytes: Int?) -> String {
+        guard let bytes else {
+            return "غير متاح"
+        }
+
+        return ByteCountFormatter.string(
+            fromByteCount: Int64(bytes),
+            countStyle: .file
+        )
+    }
+
+    private func startMonitoring() {
+        stopMonitoring()
 
         let newMonitor = NWPathMonitor()
         monitor = newMonitor
 
         newMonitor.pathUpdateHandler = { path in
             DispatchQueue.main.async {
-                isConnected = path.status == .satisfied
-                connectionStatus = isConnected
+                connectionStatus = path.status == .satisfied
                     ? "متصل بالشبكة"
                     : "لا يوجد اتصال بالشبكة"
             }
@@ -94,118 +250,8 @@ struct ToolsView: View {
         newMonitor.start(queue: queue)
     }
 
-    private func stopNetworkMonitor() {
+    private func stopMonitoring() {
         monitor?.cancel()
         monitor = nil
     }
-
-    @ViewBuilder
-    private func toolDetails(_ tool: String) -> some View {
-        NavigationStack {
-            VStack(spacing: 20) {
-                switch tool {
-                case "فحص الاتصال":
-                    Image(systemName: "wifi")
-                        .font(.system(size: 45))
-
-                    Text(connectionStatus)
-                        .font(.title2.bold())
-
-                    Text("هذه الأداة تفحص وجود اتصال بالشبكة، ولا تقيس سرعة الإنترنت.")
-                        .foregroundStyle(.gray)
-
-                case "معلومات الجهاز":
-                    detailRow("الجهاز", UIDevice.current.model)
-                    detailRow("النظام", UIDevice.current.systemVersion)
-
-                case "مساحة التخزين":
-                    if let values = try? URL(fileURLWithPath: NSHomeDirectory())
-                        .resourceValues(forKeys: [
-                            .volumeTotalCapacityKey,
-                            .volumeAvailableCapacityKey
-                        ]) {
-                        detailRow("المساحة الكلية", formatBytes(values.volumeTotalCapacity))
-                        detailRow("المساحة المتاحة", formatBytes(values.volumeAvailableCapacity))
-                    } else {
-                        Text("تعذر قراءة معلومات التخزين")
-                    }
-
-                case "حالة البطارية":
-                    detailRow("مستوى البطارية", batteryLevel)
-                    detailRow("حالة الشحن", batteryState)
-
-                case "إعدادات التطبيق":
-                    Button("فتح إعدادات التطبيق") {
-                        if let url = URL(string: UIApplication.openSettingsURLString) {
-                            UIApplication.shared.open(url)
-                        }
-                    }
-                    .foregroundStyle(.white)
-
-                default:
-                    Text("الأداة غير متاحة")
-                }
-
-                Spacer()
-            }
-            .padding()
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.black)
-            .foregroundStyle(.white)
-            .navigationTitle(tool)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("إغلاق") {
-                        selectedTool = nil
-                    }
-                }
-            }
-        }
-    }
-
-    private func detailRow(_ title: String, _ value: String) -> some View {
-        HStack {
-            Text(title).foregroundStyle(.gray)
-            Spacer()
-            Text(value).foregroundStyle(.white)
-        }
-        .padding()
-        .background(Color.white.opacity(0.07))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-
-    private var batteryLevel: String {
-        UIDevice.current.isBatteryMonitoringEnabled = true
-        let level = UIDevice.current.batteryLevel
-        return level < 0 ? "غير متاح" : "\(Int(level * 100))%"
-    }
-
-    private var batteryState: String {
-        UIDevice.current.isBatteryMonitoringEnabled = true
-
-        switch UIDevice.current.batteryState {
-        case .charging:
-            return "قيد الشحن"
-        case .full:
-            return "ممتلئة"
-        case .unplugged:
-            return "غير موصولة بالشاحن"
-        default:
-            return "غير معروف"
-        }
-    }
-
-    private func formatBytes(_ bytes: Int?) -> String {
-        guard let bytes else { return "غير متاح" }
-
-        return ByteCountFormatter.string(
-            fromByteCount: Int64(bytes),
-            countStyle: .file
-        )
-    }
-}
-
-extension String: Identifiable {
-    public var id: String { self }
 }
