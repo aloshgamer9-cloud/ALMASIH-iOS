@@ -1,3 +1,4 @@
+
 import SwiftUI
 import UIKit
 import Network
@@ -14,48 +15,52 @@ private final class ModuleNetworkObserver: ObservableObject {
     @Published var status = ""
     @Published var connectionType = ""
 
-    private let monitor = NWPathMonitor()
+    private var monitor: NWPathMonitor?
     private let queue = DispatchQueue(label: "ALMASIH.ModuleNetwork")
-
     private var isRunning = false
 
     func start(isArabic: Bool) {
         guard !isRunning else { return }
+
+        let newMonitor = NWPathMonitor()
+        monitor = newMonitor
         isRunning = true
 
-        monitor.pathUpdateHandler = { [weak self] path in
-            let status = path.status == .satisfied
+        newMonitor.pathUpdateHandler = { [weak self] path in
+            let newStatus = path.status == .satisfied
                 ? (isArabic ? "متصل" : "Connected")
                 : (isArabic ? "غير متصل" : "Disconnected")
 
-            let type: String
+            let newType: String
             if path.usesInterfaceType(.wifi) {
-                type = "Wi-Fi"
+                newType = "Wi-Fi"
             } else if path.usesInterfaceType(.cellular) {
-                type = isArabic ? "بيانات الهاتف" : "Cellular"
+                newType = isArabic ? "بيانات الهاتف" : "Cellular"
             } else if path.usesInterfaceType(.wiredEthernet) {
-                type = "Ethernet"
+                newType = "Ethernet"
             } else {
-                type = isArabic ? "غير معروف" : "Unknown"
+                newType = isArabic ? "غير معروف" : "Unknown"
             }
 
             DispatchQueue.main.async {
-                self?.status = status
-                self?.connectionType = type
+                guard let self, self.isRunning else { return }
+                self.status = newStatus
+                self.connectionType = newType
             }
         }
 
-        monitor.start(queue: queue)
+        newMonitor.start(queue: queue)
     }
 
     func stop() {
         guard isRunning else { return }
-        monitor.cancel()
         isRunning = false
+        monitor?.cancel()
+        monitor = nil
     }
 
     deinit {
-        monitor.cancel()
+        monitor?.cancel()
     }
 }
 
