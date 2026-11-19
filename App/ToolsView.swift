@@ -42,7 +42,10 @@ struct ToolsView: View {
                     Text("مركز أدوات ALMASIH")
                         .foregroundColor(.gray)
 
-                    ForEach(tools) { tool in
+                    ForEach(Array(tools.enumerated()), id: \.offset) { element in
+                        let index = element.offset
+                        let tool = element.element
+
                         Button {
                             selectedTool = tool
                         } label: {
@@ -74,6 +77,7 @@ struct ToolsView: View {
                             )
                         }
                         .buttonStyle(.plain)
+                        .accessibilityIdentifier("tool_button_\(index)")
                     }
                 }
                 .padding()
@@ -93,6 +97,7 @@ struct ToolsView: View {
                             Button("إغلاق") {
                                 selectedTool = nil
                             }
+                            .accessibilityIdentifier("tool_close")
                         }
                     }
             }
