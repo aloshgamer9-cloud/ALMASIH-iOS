@@ -1,3 +1,4 @@
+
 import SwiftUI
 import UIKit
 
@@ -9,14 +10,6 @@ struct MonitorView: View {
 
     private var isArabic: Bool {
         appLanguage == "ar"
-    }
-
-    private var deviceName: String {
-        UIDevice.current.model
-    }
-
-    private var systemVersion: String {
-        UIDevice.current.systemVersion
     }
 
     var body: some View {
@@ -49,14 +42,14 @@ struct MonitorView: View {
 
                     monitorCard(
                         title: isArabic ? "نوع الجهاز" : "Device Model",
-                        value: deviceName,
+                        value: UIDevice.current.model,
                         symbol: "iphone",
                         identifier: "monitor_device"
                     )
 
                     monitorCard(
                         title: isArabic ? "إصدار النظام" : "System Version",
-                        value: "iOS \(systemVersion)",
+                        value: "iOS \(UIDevice.current.systemVersion)",
                         symbol: "gear",
                         identifier: "monitor_system"
                     )
@@ -78,6 +71,9 @@ struct MonitorView: View {
         .onAppear {
             UIDevice.current.isBatteryMonitoringEnabled = true
             refreshBattery()
+        }
+        .onDisappear {
+            UIDevice.current.isBatteryMonitoringEnabled = false
         }
         .onReceive(NotificationCenter.default.publisher(
             for: UIDevice.batteryLevelDidChangeNotification
