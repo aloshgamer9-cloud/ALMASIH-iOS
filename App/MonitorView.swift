@@ -1,10 +1,15 @@
-
 import SwiftUI
 import UIKit
 
 struct MonitorView: View {
+    @AppStorage("appLanguage") private var appLanguage = "ar"
+
     @State private var batteryLevel = "غير متاح"
     @State private var batteryState = "غير معروف"
+
+    private var isArabic: Bool {
+        appLanguage == "ar"
+    }
 
     private var deviceName: String {
         UIDevice.current.model
@@ -25,41 +30,50 @@ struct MonitorView: View {
                         .tracking(3)
                         .foregroundStyle(.white)
 
-                    Text("مراقبة حالة الجهاز")
+                    Text(isArabic ? "مراقبة حالة الجهاز" : "Device Status Monitor")
                         .foregroundStyle(.gray)
 
                     monitorCard(
-                        title: "مستوى البطارية",
+                        title: isArabic ? "مستوى البطارية" : "Battery Level",
                         value: batteryLevel,
-                        symbol: "battery.100"
+                        symbol: "battery.100",
+                        identifier: "monitor_battery_level"
                     )
 
                     monitorCard(
-                        title: "حالة الشحن",
+                        title: isArabic ? "حالة الشحن" : "Charging Status",
                         value: batteryState,
-                        symbol: "bolt.fill"
+                        symbol: "bolt.fill",
+                        identifier: "monitor_battery_state"
                     )
 
                     monitorCard(
-                        title: "نوع الجهاز",
+                        title: isArabic ? "نوع الجهاز" : "Device Model",
                         value: deviceName,
-                        symbol: "iphone"
+                        symbol: "iphone",
+                        identifier: "monitor_device"
                     )
 
                     monitorCard(
-                        title: "إصدار النظام",
+                        title: isArabic ? "إصدار النظام" : "System Version",
                         value: "iOS \(systemVersion)",
-                        symbol: "gear"
+                        symbol: "gear",
+                        identifier: "monitor_system"
                     )
 
-                    Text("تعرض هذه الشاشة المعلومات التي يسمح iOS للتطبيق بقراءتها.")
-                        .font(.caption)
-                        .foregroundStyle(.gray)
-                        .padding(.top, 8)
+                    Text(
+                        isArabic
+                        ? "تعرض هذه الشاشة المعلومات التي يسمح iOS للتطبيق بقراءتها."
+                        : "This screen displays information that iOS allows the app to access."
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.gray)
+                    .padding(.top, 8)
                 }
                 .padding()
             }
         }
+        .environment(\.layoutDirection, isArabic ? .rightToLeft : .leftToRight)
         .preferredColorScheme(.dark)
         .onAppear {
             UIDevice.current.isBatteryMonitoringEnabled = true
@@ -80,30 +94,27 @@ struct MonitorView: View {
     private func refreshBattery() {
         let level = UIDevice.current.batteryLevel
 
-        if level >= 0 {
-            batteryLevel = "\(Int(level * 100))%"
-        } else {
-            batteryLevel = "غير متاح"
-        }
+        batteryLevel = level >= 0
+            ? "\(Int(level * 100))%"
+            : (isArabic ? "غير متاح" : "Unavailable")
 
         switch UIDevice.current.batteryState {
         case .charging:
-            batteryState = "قيد الشحن"
+            batteryState = isArabic ? "قيد الشحن" : "Charging"
         case .full:
-            batteryState = "ممتلئة"
+            batteryState = isArabic ? "ممتلئة" : "Full"
         case .unplugged:
-            batteryState = "غير موصولة بالشاحن"
-        case .unknown:
-            batteryState = "غير معروف"
-        @unknown default:
-            batteryState = "غير معروف"
+            batteryState = isArabic ? "غير موصولة بالشاحن" : "Unplugged"
+        default:
+            batteryState = isArabic ? "غير معروف" : "Unknown"
         }
     }
 
     private func monitorCard(
         title: String,
         value: String,
-        symbol: String
+        symbol: String,
+        identifier: String
     ) -> some View {
         HStack(spacing: 14) {
             Image(systemName: symbol)
@@ -121,6 +132,7 @@ struct MonitorView: View {
                 Text(value)
                     .font(.headline)
                     .foregroundStyle(.white)
+                    .accessibilityIdentifier(identifier)
             }
 
             Spacer()
