@@ -6,8 +6,8 @@ struct ContentView: View {
     @AppStorage("appLanguage") private var appLanguage = "ar"
     @State private var selectedTab = 0
     @State private var isNetworkConnected = false
-
     @State private var networkMonitor: NWPathMonitor?
+
     private let networkQueue = DispatchQueue(label: "ALMASIH.HomeNetwork")
 
     private var isArabic: Bool {
@@ -110,14 +110,10 @@ struct ContentView: View {
 
     private var networkStatusText: String {
         if isArabic {
-            return isNetworkConnected
-                ? "متصل بالشبكة"
-                : "غير متصل"
+            return isNetworkConnected ? "متصل بالشبكة" : "غير متصل"
         }
 
-        return isNetworkConnected
-            ? "NETWORK CONNECTED"
-            : "OFFLINE"
+        return isNetworkConnected ? "NETWORK CONNECTED" : "OFFLINE"
     }
 
     private var homeContent: some View {
@@ -141,11 +137,7 @@ struct ContentView: View {
             HStack {
                 Image(systemName: "cpu")
 
-                Text(
-                    isArabic
-                    ? "التطبيق يعمل"
-                    : "APP IS RUNNING"
-                )
+                Text(isArabic ? "التطبيق يعمل" : "APP IS RUNNING")
 
                 Spacer()
 
@@ -166,9 +158,7 @@ struct ContentView: View {
                 Spacer()
 
                 Text(networkStatusText)
-                    .foregroundStyle(
-                        isNetworkConnected ? .green : .red
-                    )
+                    .foregroundStyle(isNetworkConnected ? .green : .red)
             }
             .font(.caption.bold())
             .foregroundStyle(.white)
@@ -204,6 +194,7 @@ struct ContentView: View {
                     .padding(.vertical, 12)
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("tab_\(index)")
             }
         }
         .background(Color.white.opacity(0.07))
