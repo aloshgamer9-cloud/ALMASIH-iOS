@@ -1,13 +1,62 @@
-
 import SwiftUI
 import UIKit
 import Network
+import Combine
 
 private struct ALMASIHModule: Identifiable, Hashable {
     let id: Int
     let title: String
     let subtitle: String
     let icon: String
+}
+
+private final class ModuleNetworkObserver: ObservableObject {
+    @Published var status = ""
+    @Published var connectionType = ""
+
+    private let monitor = NWPathMonitor()
+    private let queue = DispatchQueue(label: "ALMASIH.ModuleNetwork")
+
+    private var isRunning = false
+
+    func start(isArabic: Bool) {
+        guard !isRunning else { return }
+        isRunning = true
+
+        monitor.pathUpdateHandler = { [weak self] path in
+            let status = path.status == .satisfied
+                ? (isArabic ? "متصل" : "Connected")
+                : (isArabic ? "غير متصل" : "Disconnected")
+
+            let type: String
+            if path.usesInterfaceType(.wifi) {
+                type = "Wi-Fi"
+            } else if path.usesInterfaceType(.cellular) {
+                type = isArabic ? "بيانات الهاتف" : "Cellular"
+            } else if path.usesInterfaceType(.wiredEthernet) {
+                type = "Ethernet"
+            } else {
+                type = isArabic ? "غير معروف" : "Unknown"
+            }
+
+            DispatchQueue.main.async {
+                self?.status = status
+                self?.connectionType = type
+            }
+        }
+
+        monitor.start(queue: queue)
+    }
+
+    func stop() {
+        guard isRunning else { return }
+        monitor.cancel()
+        isRunning = false
+    }
+
+    deinit {
+        monitor.cancel()
+    }
 }
 
 struct ModulesView: View {
@@ -109,11 +158,10 @@ private struct ModuleDetailView: View {
     let isArabic: Bool
 
     @Environment(\.dismiss) private var dismiss
+    @StateObject private var networkObserver = ModuleNetworkObserver()
 
     @State private var batteryLevel = -1.0
     @State private var batteryState = UIDevice.BatteryState.unknown
-    @State private var networkStatus = ""
-    @State private var connectionType = ""
 
     var body: some View {
         ZStack {
@@ -157,9 +205,23 @@ private struct ModuleDetailView: View {
         .environment(\.layoutDirection, isArabic ? .rightToLeft : .leftToRight)
         .preferredColorScheme(.dark)
         .onAppear {
-            UIDevice.current.isBatteryMonitoringEnabled = true
-            refreshBattery()
-            checkNetwork()
+            if module.id == 0 {
+                UIDevice.current.isBatteryMonitoringEnabled = true
+                refreshBattery()
+            }
+
+            if module.id == 1 {
+                networkObserver.start(isArabic: isArabic)
+            }
+        }
+        .onDisappear {
+            if module.id == 0 {
+                UIDevice.current.isBatteryMonitoringEnabled = false
+            }
+
+            if module.id == 1 {
+                networkObserver.stop()
+            }
         }
         .onReceive(NotificationCenter.default.publisher(
             for: UIDevice.batteryLevelDidChangeNotification
@@ -181,7 +243,9 @@ private struct ModuleDetailView: View {
 
             infoRow(
                 isArabic ? "مستوى البطارية" : "Battery Level",
-                batteryLevel < 0 ? (isArabic ? "غير متاح" : "Unavailable") : "\(Int(batteryLevel * 100))%"
+                batteryLevel < 0
+                    ? (isArabic ? "غير متاح" : "Unavailable")
+                    : "\(Int(batteryLevel * 100))%"
             )
 
             infoRow(
@@ -195,16 +259,16 @@ private struct ModuleDetailView: View {
         VStack(spacing: 15) {
             infoRow(
                 isArabic ? "حالة الشبكة" : "Network Status",
-                networkStatus.isEmpty
+                networkObserver.status.isEmpty
                     ? (isArabic ? "جاري الفحص..." : "Checking...")
-                    : networkStatus
+                    : networkObserver.status
             )
 
             infoRow(
                 isArabic ? "نوع الاتصال" : "Connection Type",
-                connectionType.isEmpty
+                networkObserver.connectionType.isEmpty
                     ? (isArabic ? "غير معروف" : "Unknown")
-                    : connectionType
+                    : networkObserver.connectionType
             )
 
             Text(isArabic
@@ -214,6 +278,7 @@ private struct ModuleDetailView: View {
                 .foregroundStyle(.gray)
                 .multilineTextAlignment(.center)
         }
+        .accessibilityIdentifier("module_network_information")
     }
 
     private var appAnalysis: some View {
@@ -288,36 +353,6 @@ private struct ModuleDetailView: View {
     private func refreshBattery() {
         batteryLevel = Double(UIDevice.current.batteryLevel)
         batteryState = UIDevice.current.batteryState
-    }
-
-    private func checkNetwork() {
-        let monitor = NWPathMonitor()
-        let queue = DispatchQueue(label: "ALMASIH.ModuleNetworkCheck")
-
-        monitor.pathUpdateHandler = { path in
-            let status = path.status == .satisfied
-                ? (isArabic ? "متصل" : "Connected")
-                : (isArabic ? "غير متصل" : "Disconnected")
-
-            let type: String
-            if path.usesInterfaceType(.wifi) {
-                type = "Wi-Fi"
-            } else if path.usesInterfaceType(.cellular) {
-                type = isArabic ? "بيانات الهاتف" : "Cellular"
-            } else if path.usesInterfaceType(.wiredEthernet) {
-                type = "Ethernet"
-            } else {
-                type = isArabic ? "غير معروف" : "Unknown"
-            }
-
-            DispatchQueue.main.async {
-                networkStatus = status
-                connectionType = type
-                monitor.cancel()
-            }
-        }
-
-        monitor.start(queue: queue)
     }
 
     private func infoRow(_ title: String, _ value: String) -> some View {
