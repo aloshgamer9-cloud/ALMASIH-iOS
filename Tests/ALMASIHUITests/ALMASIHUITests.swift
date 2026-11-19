@@ -51,12 +51,48 @@ final class ALMASIHUITests: XCTestCase {
         }
     }
 
-    func testMonitorAndSettingsTabsLoad() {
+    func testMonitorInformationAndLanguageSwitch() {
+        app.buttons["tab_4"].tap()
+
+        let arabic = app.segmentedControls.buttons["العربية"]
+        XCTAssertTrue(arabic.waitForExistence(timeout: 10))
+        arabic.tap()
+
         app.buttons["tab_2"].tap()
+
         XCTAssertTrue(
-            app.staticTexts["MONITOR"].waitForExistence(timeout: 10)
+            app.staticTexts["مراقبة حالة الجهاز"]
+                .waitForExistence(timeout: 10)
         )
 
+        let identifiers = [
+            "monitor_battery_level",
+            "monitor_battery_state",
+            "monitor_device",
+            "monitor_system"
+        ]
+
+        for identifier in identifiers {
+            let element = app.descendants(matching: .any)
+                .matching(identifier: identifier).firstMatch
+            XCTAssertTrue(element.waitForExistence(timeout: 10))
+        }
+
+        app.buttons["tab_4"].tap()
+
+        let english = app.segmentedControls.buttons["English"]
+        XCTAssertTrue(english.waitForExistence(timeout: 10))
+        english.tap()
+
+        app.buttons["tab_2"].tap()
+
+        XCTAssertTrue(
+            app.staticTexts["Device Status Monitor"]
+                .waitForExistence(timeout: 10)
+        )
+    }
+
+    func testSettingsTabLoads() {
         app.buttons["tab_4"].tap()
         XCTAssertTrue(
             app.staticTexts["SETTINGS"].waitForExistence(timeout: 10)
