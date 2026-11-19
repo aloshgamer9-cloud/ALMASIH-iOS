@@ -3,15 +3,43 @@ import SwiftUI
 import UIKit
 import Network
 
+private struct ALMASIHModule: Identifiable {
+    let title: String
+    let icon: String
+    let subtitle: String
+
+    var id: String { title }
+}
+
 struct ModulesView: View {
-    @State private var selectedModule: String?
+    @State private var selectedModule: ALMASIHModule?
 
     private let modules = [
-        ("مراقبة النظام", "cpu", "معلومات الجهاز والبطارية"),
-        ("مراقبة الشبكة", "wifi", "حالة اتصال الإنترنت"),
-        ("تحليل التطبيقات", "app.badge", "معلومات التطبيقات"),
-        ("أدوات النظام", "gearshape.2", "فتح إعدادات التطبيق"),
-        ("مركز الأمان", "shield.lefthalf.filled", "إرشادات حماية الجهاز")
+        ALMASIHModule(
+            title: "مراقبة النظام",
+            icon: "cpu",
+            subtitle: "معلومات الجهاز والبطارية"
+        ),
+        ALMASIHModule(
+            title: "مراقبة الشبكة",
+            icon: "wifi",
+            subtitle: "حالة اتصال الإنترنت"
+        ),
+        ALMASIHModule(
+            title: "تحليل التطبيقات",
+            icon: "app.badge",
+            subtitle: "معلومات التطبيقات"
+        ),
+        ALMASIHModule(
+            title: "أدوات النظام",
+            icon: "gearshape.2",
+            subtitle: "فتح إعدادات التطبيق"
+        ),
+        ALMASIHModule(
+            title: "مركز الأمان",
+            icon: "shield.lefthalf.filled",
+            subtitle: "إرشادات حماية الجهاز"
+        )
     ]
 
     var body: some View {
@@ -29,24 +57,26 @@ struct ModulesView: View {
                         Text("وحدات منصة المسيح")
                             .foregroundStyle(.gray)
 
-                        ForEach(modules, id: \.0) { item in
+                        ForEach(modules) { item in
                             Button {
-                                selectedModule = item.0
+                                selectedModule = item
                             } label: {
                                 HStack(spacing: 16) {
-                                    Image(systemName: item.1)
+                                    Image(systemName: item.icon)
                                         .font(.title2)
                                         .foregroundStyle(.white)
                                         .frame(width: 48, height: 48)
                                         .background(Color.white.opacity(0.1))
-                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                                        .clipShape(
+                                            RoundedRectangle(cornerRadius: 12)
+                                        )
 
                                     VStack(alignment: .leading, spacing: 5) {
-                                        Text(item.0)
+                                        Text(item.title)
                                             .foregroundStyle(.white)
                                             .font(.headline)
 
-                                        Text(item.2)
+                                        Text(item.subtitle)
                                             .foregroundStyle(.gray)
                                             .font(.caption)
                                     }
@@ -57,8 +87,12 @@ struct ModulesView: View {
                                         .foregroundStyle(.gray)
                                 }
                                 .padding()
+                                .frame(maxWidth: .infinity)
                                 .background(Color.white.opacity(0.06))
-                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                                .clipShape(
+                                    RoundedRectangle(cornerRadius: 16)
+                                )
+                                .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                         }
@@ -75,10 +109,11 @@ struct ModulesView: View {
     }
 
     @ViewBuilder
-    private func moduleDetails(_ module: String) -> some View {
+    private func moduleDetails(_ module: ALMASIHModule) -> some View {
         NavigationStack {
             VStack(spacing: 18) {
-                switch module {
+                switch module.title {
+
                 case "مراقبة النظام":
                     info("نوع الجهاز", UIDevice.current.model)
                     info("إصدار iOS", UIDevice.current.systemVersion)
@@ -94,8 +129,10 @@ struct ModulesView: View {
                     Text("معلومات التطبيقات")
                         .font(.title2.bold())
 
-                    Text("يفرض iOS قيوداً على قراءة بيانات التطبيقات الأخرى وإدارتها.")
-                        .foregroundStyle(.gray)
+                    Text(
+                        "يفرض iOS قيوداً على قراءة بيانات التطبيقات الأخرى وإدارتها."
+                    )
+                    .foregroundStyle(.gray)
 
                 case "أدوات النظام":
                     Image(systemName: "gearshape.2")
@@ -105,7 +142,9 @@ struct ModulesView: View {
                         .font(.title2.bold())
 
                     Button("فتح إعدادات ALMASIH") {
-                        if let url = URL(string: UIApplication.openSettingsURLString) {
+                        if let url = URL(
+                            string: UIApplication.openSettingsURLString
+                        ) {
                             UIApplication.shared.open(url)
                         }
                     }
@@ -132,7 +171,7 @@ struct ModulesView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.black)
             .foregroundStyle(.white)
-            .navigationTitle(module)
+            .navigationTitle(module.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -142,13 +181,18 @@ struct ModulesView: View {
                 }
             }
         }
+        .preferredColorScheme(.dark)
     }
 
     private func info(_ title: String, _ value: String) -> some View {
         HStack {
-            Text(title).foregroundStyle(.gray)
+            Text(title)
+                .foregroundStyle(.gray)
+
             Spacer()
-            Text(value).foregroundStyle(.white)
+
+            Text(value)
+                .foregroundStyle(.white)
         }
         .padding()
         .background(Color.white.opacity(0.07))
@@ -161,7 +205,9 @@ private struct NetworkModuleView: View {
     @State private var connectionType = "غير معروف"
     @State private var monitor: NWPathMonitor?
 
-    private let queue = DispatchQueue(label: "ALMASIH.ModulesNetwork")
+    private let queue = DispatchQueue(
+        label: "ALMASIH.ModulesNetwork"
+    )
 
     var body: some View {
         VStack(spacing: 16) {
@@ -174,9 +220,11 @@ private struct NetworkModuleView: View {
             Text("نوع الاتصال: \(connectionType)")
                 .foregroundStyle(.gray)
 
-            Text("هذا الفحص يعرض حالة اتصال الشبكة، ولا يقيس سرعة الإنترنت.")
-                .font(.caption)
-                .foregroundStyle(.gray)
+            Text(
+                "هذا الفحص يعرض حالة اتصال الشبكة، ولا يقيس سرعة الإنترنت."
+            )
+            .font(.caption)
+            .foregroundStyle(.gray)
         }
         .onAppear {
             startMonitoring()
