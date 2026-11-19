@@ -9,6 +9,51 @@ private struct ALMASIHTool: Identifiable, Hashable {
     let icon: String
 }
 
+private final class NetworkStatusObserver: ObservableObject {
+    @Published var status = ""
+
+    private var monitor: NWPathMonitor?
+
+    func start(isArabic: Bool) {
+        stop()
+        status = isArabic ? "جاري الفحص..." : "Checking..."
+
+        let newMonitor = NWPathMonitor()
+        monitor = newMonitor
+
+        newMonitor.pathUpdateHandler = { [weak self] path in
+            let result: String
+
+            if path.status == .satisfied {
+                if path.usesInterfaceType(.wifi) {
+                    result = isArabic ? "متصل عبر Wi-Fi" : "Connected via Wi-Fi"
+                } else if path.usesInterfaceType(.cellular) {
+                    result = isArabic ? "متصل عبر بيانات الهاتف" : "Connected via Cellular"
+                } else {
+                    result = isArabic ? "متصل بالشبكة" : "Connected"
+                }
+            } else {
+                result = isArabic ? "لا يوجد اتصال" : "Disconnected"
+            }
+
+            DispatchQueue.main.async {
+                self?.status = result
+            }
+        }
+
+        newMonitor.start(queue: DispatchQueue(label: "ALMASIH.NetworkMonitor"))
+    }
+
+    func stop() {
+        monitor?.cancel()
+        monitor = nil
+    }
+
+    deinit {
+        stop()
+    }
+}
+
 struct ToolsView: View {
     @AppStorage("appLanguage") private var appLanguage = "ar"
 
@@ -89,8 +134,8 @@ private struct ToolDetailView: View {
     let isArabic: Bool
 
     @Environment(\.dismiss) private var dismiss
+    @StateObject private var networkObserver = NetworkStatusObserver()
 
-    @State private var networkStatus = ""
     @State private var batteryLevel = -1.0
     @State private var batteryState = UIDevice.BatteryState.unknown
 
@@ -136,32 +181,51 @@ private struct ToolDetailView: View {
         .environment(\.layoutDirection, isArabic ? .rightToLeft : .leftToRight)
         .preferredColorScheme(.dark)
         .onAppear {
-            UIDevice.current.isBatteryMonitoringEnabled = true
-            refreshBattery()
-            checkNetwork()
+            if tool.id == 0 {
+                networkObserver.start(isArabic: isArabic)
+            }
+
+            if tool.id == 3 {
+                UIDevice.current.isBatteryMonitoringEnabled = true
+                refreshBattery()
+            }
+        }
+        .onDisappear {
+            networkObserver.stop()
+
+            if tool.id == 3 {
+                UIDevice.current.isBatteryMonitoringEnabled = false
+            }
         }
         .onReceive(NotificationCenter.default.publisher(
             for: UIDevice.batteryLevelDidChangeNotification
         )) { _ in
-            refreshBattery()
+            if tool.id == 3 {
+                refreshBattery()
+            }
         }
         .onReceive(NotificationCenter.default.publisher(
             for: UIDevice.batteryStateDidChangeNotification
         )) { _ in
-            refreshBattery()
+            if tool.id == 3 {
+                refreshBattery()
+            }
         }
     }
 
     private var networkInformation: some View {
         VStack(spacing: 15) {
-            Text(networkStatus.isEmpty
-                 ? (isArabic ? "اضغط للفحص" : "Tap to check")
-                 : networkStatus)
-                .font(.title2.bold())
-                .foregroundStyle(.white)
+            Text(
+                networkObserver.status.isEmpty
+                ? (isArabic ? "اضغط للفحص" : "Tap to check")
+                : networkObserver.status
+            )
+            .font(.title2.bold())
+            .foregroundStyle(.white)
+            .accessibilityIdentifier("network_status")
 
             Button(isArabic ? "فحص الاتصال الآن" : "Check Connection") {
-                checkNetwork()
+                networkObserver.start(isArabic: isArabic)
             }
             .foregroundStyle(.white)
             .padding()
@@ -169,8 +233,8 @@ private struct ToolDetailView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
 
             Text(isArabic
-                 ? "يعرض حالة الاتصال فقط ولا يقيس سرعة الإنترنت."
-                 : "Shows connection status only, not internet speed.")
+                 ? "يعرض حالة الاتصال ونوع الشبكة فقط، ولا يقيس سرعة الإنترنت."
+                 : "Shows connection status and network type only, not internet speed.")
                 .font(.caption)
                 .foregroundStyle(.gray)
         }
@@ -196,6 +260,7 @@ private struct ToolDetailView: View {
                 isArabic ? "المساحة الكلية" : "Total Storage",
                 formatBytes(values?.volumeTotalCapacity)
             )
+
             infoRow(
                 isArabic ? "المساحة المتاحة" : "Available Storage",
                 formatBytes(values?.volumeAvailableCapacity)
@@ -207,7 +272,9 @@ private struct ToolDetailView: View {
         VStack(spacing: 15) {
             infoRow(
                 isArabic ? "مستوى البطارية" : "Battery Level",
-                batteryLevel < 0 ? (isArabic ? "غير متاح" : "Unavailable") : "\(Int(batteryLevel * 100))%"
+                batteryLevel < 0
+                    ? (isArabic ? "غير متاح" : "Unavailable")
+                    : "\(Int(batteryLevel * 100))%"
             )
 
             infoRow(
@@ -250,26 +317,6 @@ private struct ToolDetailView: View {
     private func refreshBattery() {
         batteryLevel = Double(UIDevice.current.batteryLevel)
         batteryState = UIDevice.current.batteryState
-    }
-
-    private func checkNetwork() {
-        let monitor = NWPathMonitor()
-        let queue = DispatchQueue(label: "ALMASIH.ToolNetworkCheck")
-
-        networkStatus = isArabic ? "جاري الفحص..." : "Checking..."
-
-        monitor.pathUpdateHandler = { path in
-            let result = path.status == .satisfied
-                ? (isArabic ? "متصل بالشبكة" : "Connected")
-                : (isArabic ? "لا يوجد اتصال" : "Disconnected")
-
-            DispatchQueue.main.async {
-                networkStatus = result
-                monitor.cancel()
-            }
-        }
-
-        monitor.start(queue: queue)
     }
 
     private func infoRow(_ title: String, _ value: String) -> some View {
