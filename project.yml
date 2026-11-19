@@ -13,6 +13,9 @@ targets:
     sources:
       - path: App
       - path: SettingsView.swift
+    scheme:
+      testTargets:
+        - ALMASIHUITests
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.almasih.ios
@@ -22,3 +25,16 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: ALMASIH
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
+
+  ALMASIHUITests:
+    type: ui-testing
+    platform: iOS
+    sources:
+      - path: Tests/ALMASIHUITests
+    dependencies:
+      - target: ALMASIH
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.almasih.ios.uitests
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: YES
