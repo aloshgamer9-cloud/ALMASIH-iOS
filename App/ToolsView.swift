@@ -15,6 +15,9 @@ struct ToolsView: View {
     @State private var connectionStatus = "جاري الفحص..."
     @State private var monitor: NWPathMonitor?
 
+    @State private var batteryLevel = UIDevice.current.batteryLevel
+    @State private var batteryState = UIDevice.current.batteryState
+
     private let queue = DispatchQueue(label: "ALMASIH.NetworkMonitor")
 
     private let tools = [
@@ -97,10 +100,25 @@ struct ToolsView: View {
         }
         .onAppear {
             UIDevice.current.isBatteryMonitoringEnabled = true
+            refreshBattery()
             startMonitoring()
         }
         .onDisappear {
             stopMonitoring()
+        }
+        .onReceive(
+            NotificationCenter.default.publisher(
+                for: UIDevice.batteryLevelDidChangeNotification
+            )
+        ) { _ in
+            refreshBattery()
+        }
+        .onReceive(
+            NotificationCenter.default.publisher(
+                for: UIDevice.batteryStateDidChangeNotification
+            )
+        ) { _ in
+            refreshBattery()
         }
         .preferredColorScheme(.dark)
     }
@@ -179,15 +197,13 @@ struct ToolsView: View {
     }
 
     private var batteryInformation: some View {
-        let level = UIDevice.current.batteryLevel
-
-        let percentage = level < 0
+        let percentage = batteryLevel < 0
             ? "غير متاح"
-            : "\(Int(level * 100))%"
+            : "\(Int(batteryLevel * 100))%"
 
         let state: String
 
-        switch UIDevice.current.batteryState {
+        switch batteryState {
         case .charging:
             state = "قيد الشحن"
         case .full:
@@ -202,6 +218,11 @@ struct ToolsView: View {
             infoRow("مستوى البطارية", percentage)
             infoRow("حالة الشحن", state)
         }
+    }
+
+    private func refreshBattery() {
+        batteryLevel = UIDevice.current.batteryLevel
+        batteryState = UIDevice.current.batteryState
     }
 
     private func infoRow(
