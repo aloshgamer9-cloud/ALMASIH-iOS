@@ -27,7 +27,7 @@ targets:
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
 
   ALMASIHUITests:
-    type: ui-testing
+    type: bundle.ui-testing
     platform: iOS
     sources:
       - path: Tests/ALMASIHUITests
@@ -36,5 +36,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.almasih.ios.uitests
+        PRODUCT_NAME: ALMASIHUITests
+        TEST_TARGET_NAME: ALMASIH
         SWIFT_VERSION: "5.0"
         GENERATE_INFOPLIST_FILE: YES
