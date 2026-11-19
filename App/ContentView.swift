@@ -1,9 +1,14 @@
 
 import SwiftUI
+import Network
 
 struct ContentView: View {
     @AppStorage("appLanguage") private var appLanguage = "ar"
     @State private var selectedTab = 0
+    @State private var isNetworkConnected = false
+
+    @State private var networkMonitor: NWPathMonitor?
+    private let networkQueue = DispatchQueue(label: "ALMASIH.HomeNetwork")
 
     private var isArabic: Bool {
         appLanguage == "ar"
@@ -55,8 +60,17 @@ struct ContentView: View {
             .padding(.horizontal, 18)
             .padding(.bottom, 10)
         }
-        .environment(\.layoutDirection, isArabic ? .rightToLeft : .leftToRight)
+        .environment(
+            \.layoutDirection,
+            isArabic ? .rightToLeft : .leftToRight
+        )
         .preferredColorScheme(.dark)
+        .onAppear {
+            startNetworkMonitoring()
+        }
+        .onDisappear {
+            stopNetworkMonitoring()
+        }
     }
 
     private var header: some View {
@@ -71,23 +85,39 @@ struct ContentView: View {
                     .tracking(3)
                     .foregroundStyle(.white)
 
-                Text("ADVANCED iOS PLATFORM")
-                    .font(.system(size: 9))
-                    .tracking(2)
-                    .foregroundStyle(.gray)
+                Text(
+                    isArabic
+                    ? "منصة iOS المتقدمة"
+                    : "ADVANCED iOS PLATFORM"
+                )
+                .font(.system(size: 9))
+                .tracking(2)
+                .foregroundStyle(.gray)
             }
 
             Spacer()
 
             Circle()
-                .fill(Color.green)
+                .fill(isNetworkConnected ? Color.green : Color.red)
                 .frame(width: 8, height: 8)
 
-            Text(isArabic ? "متصل" : "ONLINE")
+            Text(networkStatusText)
                 .font(.system(size: 10, weight: .bold))
                 .foregroundStyle(.gray)
         }
         .padding(.top, 20)
+    }
+
+    private var networkStatusText: String {
+        if isArabic {
+            return isNetworkConnected
+                ? "متصل بالشبكة"
+                : "غير متصل"
+        }
+
+        return isNetworkConnected
+            ? "NETWORK CONNECTED"
+            : "OFFLINE"
     }
 
     private var homeContent: some View {
@@ -98,22 +128,47 @@ struct ContentView: View {
 
             Text(
                 isArabic
-                ? "منصة ALMASIH للتحكم والمراقبة"
-                : "ALMASIH Monitoring Platform"
+                ? "منصة ALMASIH للمراقبة وأدوات الجهاز"
+                : "ALMASIH device monitoring and tools"
             )
             .foregroundStyle(.gray)
 
-            Text("SYSTEM CORE")
+            Text(isArabic ? "حالة النظام" : "SYSTEM STATUS")
                 .font(.caption.bold())
                 .tracking(2)
                 .foregroundStyle(.gray)
 
             HStack {
                 Image(systemName: "cpu")
-                Text("CORE INITIALIZED")
+
+                Text(
+                    isArabic
+                    ? "التطبيق يعمل"
+                    : "APP IS RUNNING"
+                )
+
                 Spacer()
-                Text("READY")
+
+                Text(isArabic ? "جاهز" : "READY")
                     .foregroundStyle(.green)
+            }
+            .font(.caption.bold())
+            .foregroundStyle(.white)
+            .padding()
+            .background(Color.white.opacity(0.07))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+
+            HStack {
+                Image(systemName: "wifi")
+
+                Text(isArabic ? "اتصال الشبكة" : "NETWORK")
+
+                Spacer()
+
+                Text(networkStatusText)
+                    .foregroundStyle(
+                        isNetworkConnected ? .green : .red
+                    )
             }
             .font(.caption.bold())
             .foregroundStyle(.white)
@@ -142,7 +197,9 @@ struct ContentView: View {
                         Text(tabs[index].0)
                             .font(.system(size: 9))
                     }
-                    .foregroundStyle(selectedTab == index ? .white : .gray)
+                    .foregroundStyle(
+                        selectedTab == index ? .white : .gray
+                    )
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                 }
@@ -151,5 +208,25 @@ struct ContentView: View {
         }
         .background(Color.white.opacity(0.07))
         .clipShape(RoundedRectangle(cornerRadius: 18))
+    }
+
+    private func startNetworkMonitoring() {
+        stopNetworkMonitoring()
+
+        let monitor = NWPathMonitor()
+        networkMonitor = monitor
+
+        monitor.pathUpdateHandler = { path in
+            DispatchQueue.main.async {
+                isNetworkConnected = path.status == .satisfied
+            }
+        }
+
+        monitor.start(queue: networkQueue)
+    }
+
+    private func stopNetworkMonitoring() {
+        networkMonitor?.cancel()
+        networkMonitor = nil
     }
 }
