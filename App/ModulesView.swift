@@ -96,6 +96,7 @@ struct ModulesView: View {
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
+                            .accessibilityIdentifier("module_button_\(item.id)")
                         }
                     }
                     .padding()
@@ -155,6 +156,7 @@ struct ModulesView: View {
                     Button(isArabic ? "إغلاق" : "Close") {
                         selectedModule = nil
                     }
+                    .accessibilityIdentifier("module_close")
                 }
             }
         }
