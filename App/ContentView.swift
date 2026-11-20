@@ -20,12 +20,14 @@ struct ContentView: View {
             ("الوحدات", "square.grid.2x2"),
             ("المراقبة", "waveform.path"),
             ("الأدوات", "wrench.and.screwdriver"),
+            ("ALMASIH AI", "sparkles"),
             ("الإعدادات", "gearshape")
         ] : [
             ("Home", "house"),
             ("Modules", "square.grid.2x2"),
             ("Monitor", "waveform.path"),
             ("Tools", "wrench.and.screwdriver"),
+            ("ALMASIH AI", "sparkles"),
             ("Settings", "gearshape")
         ]
     }
@@ -48,6 +50,8 @@ struct ContentView: View {
                     case 3:
                         ToolsView()
                     case 4:
+                        ALMASIHAIView()
+                    case 5:
                         SettingsView()
                     default:
                         homeContent
@@ -136,11 +140,8 @@ struct ContentView: View {
 
             HStack {
                 Image(systemName: "cpu")
-
                 Text(isArabic ? "التطبيق يعمل" : "APP IS RUNNING")
-
                 Spacer()
-
                 Text(isArabic ? "جاهز" : "READY")
                     .foregroundStyle(.green)
             }
@@ -152,11 +153,8 @@ struct ContentView: View {
 
             HStack {
                 Image(systemName: "wifi")
-
                 Text(isArabic ? "اتصال الشبكة" : "NETWORK")
-
                 Spacer()
-
                 Text(networkStatusText)
                     .foregroundStyle(isNetworkConnected ? .green : .red)
             }
@@ -186,6 +184,8 @@ struct ContentView: View {
 
                         Text(tabs[index].0)
                             .font(.system(size: 9))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
                     }
                     .foregroundStyle(
                         selectedTab == index ? .white : .gray
