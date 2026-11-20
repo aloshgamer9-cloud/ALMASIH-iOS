@@ -20,14 +20,12 @@ struct ContentView: View {
             ("الوحدات", "square.grid.2x2"),
             ("المراقبة", "waveform.path"),
             ("الأدوات", "wrench.and.screwdriver"),
-            ("ALMASIH AI", "sparkles"),
             ("الإعدادات", "gearshape")
         ] : [
             ("Home", "house"),
             ("Modules", "square.grid.2x2"),
             ("Monitor", "waveform.path"),
             ("Tools", "wrench.and.screwdriver"),
-            ("ALMASIH AI", "sparkles"),
             ("Settings", "gearshape")
         ]
     }
@@ -50,8 +48,6 @@ struct ContentView: View {
                     case 3:
                         ToolsView()
                     case 4:
-                        ALMASIHAIView()
-                    case 5:
                         SettingsView()
                     default:
                         homeContent
