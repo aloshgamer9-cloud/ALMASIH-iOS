@@ -12,7 +12,7 @@ final class ALMASIHUITests: XCTestCase {
     }
 
     func testAllMainTabsAreReachable() {
-        for index in 0...4 {
+        for index in 0...5 {
             let tab = app.buttons["tab_\(index)"]
             XCTAssertTrue(tab.waitForExistence(timeout: 10))
             tab.tap()
@@ -52,7 +52,7 @@ final class ALMASIHUITests: XCTestCase {
     }
 
     func testMonitorInformationAndLanguageSwitch() {
-        app.buttons["tab_4"].tap()
+        app.buttons["tab_5"].tap()
 
         let arabic = app.segmentedControls.buttons["العربية"]
         XCTAssertTrue(arabic.waitForExistence(timeout: 10))
@@ -78,7 +78,7 @@ final class ALMASIHUITests: XCTestCase {
             XCTAssertTrue(element.waitForExistence(timeout: 10))
         }
 
-        app.buttons["tab_4"].tap()
+        app.buttons["tab_5"].tap()
 
         let english = app.segmentedControls.buttons["English"]
         XCTAssertTrue(english.waitForExistence(timeout: 10))
@@ -93,7 +93,8 @@ final class ALMASIHUITests: XCTestCase {
     }
 
     func testSettingsTabLoads() {
-        app.buttons["tab_4"].tap()
+        app.buttons["tab_5"].tap()
+
         XCTAssertTrue(
             app.staticTexts["SETTINGS"].waitForExistence(timeout: 10)
         )
