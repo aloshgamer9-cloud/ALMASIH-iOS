@@ -20,12 +20,14 @@ struct ContentView: View {
             ("الوحدات", "square.grid.2x2"),
             ("المراقبة", "waveform.path"),
             ("الأدوات", "wrench.and.screwdriver"),
+            ("المساعد", "sparkles"),
             ("الإعدادات", "gearshape")
         ] : [
             ("Home", "house"),
             ("Modules", "square.grid.2x2"),
             ("Monitor", "waveform.path"),
             ("Tools", "wrench.and.screwdriver"),
+            ("Assistant", "sparkles"),
             ("Settings", "gearshape")
         ]
     }
@@ -39,18 +41,13 @@ struct ContentView: View {
 
                 Group {
                     switch selectedTab {
-                    case 0:
-                        homeContent
-                    case 1:
-                        ModulesView()
-                    case 2:
-                        MonitorView()
-                    case 3:
-                        ToolsView()
-                    case 4:
-                        SettingsView()
-                    default:
-                        homeContent
+                    case 0: homeContent
+                    case 1: ModulesView()
+                    case 2: MonitorView()
+                    case 3: ToolsView()
+                    case 4: AssistantView()
+                    case 5: SettingsView()
+                    default: homeContent
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -85,14 +82,10 @@ struct ContentView: View {
                     .tracking(3)
                     .foregroundStyle(.white)
 
-                Text(
-                    isArabic
-                    ? "منصة iOS المتقدمة"
-                    : "ADVANCED iOS PLATFORM"
-                )
-                .font(.system(size: 9))
-                .tracking(2)
-                .foregroundStyle(.gray)
+                Text(isArabic ? "منصة iOS المتقدمة" : "ADVANCED iOS PLATFORM")
+                    .font(.system(size: 9))
+                    .tracking(2)
+                    .foregroundStyle(.gray)
             }
 
             Spacer()
@@ -112,7 +105,6 @@ struct ContentView: View {
         if isArabic {
             return isNetworkConnected ? "متصل بالشبكة" : "غير متصل"
         }
-
         return isNetworkConnected ? "NETWORK CONNECTED" : "OFFLINE"
     }
 
@@ -122,12 +114,10 @@ struct ContentView: View {
                 .font(.largeTitle.bold())
                 .foregroundStyle(.white)
 
-            Text(
-                isArabic
-                ? "منصة ALMASIH للمراقبة وأدوات الجهاز"
-                : "ALMASIH device monitoring and tools"
-            )
-            .foregroundStyle(.gray)
+            Text(isArabic
+                 ? "منصة ALMASIH للمراقبة وأدوات الجهاز"
+                 : "ALMASIH device monitoring and tools")
+                .foregroundStyle(.gray)
 
             Text(isArabic ? "حالة النظام" : "SYSTEM STATUS")
                 .font(.caption.bold())
@@ -176,16 +166,14 @@ struct ContentView: View {
                 } label: {
                     VStack(spacing: 7) {
                         Image(systemName: tabs[index].1)
-                            .font(.system(size: 19))
+                            .font(.system(size: 18))
 
                         Text(tabs[index].0)
-                            .font(.system(size: 9))
+                            .font(.system(size: 8))
                             .lineLimit(1)
-                            .minimumScaleFactor(0.7)
+                            .minimumScaleFactor(0.65)
                     }
-                    .foregroundStyle(
-                        selectedTab == index ? .white : .gray
-                    )
+                    .foregroundStyle(selectedTab == index ? .white : .gray)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                 }
