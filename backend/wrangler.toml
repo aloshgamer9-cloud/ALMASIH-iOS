@@ -1,5 +1,5 @@
 
-name = "almasih-backend"
+name = "almasih-ios"
 main = "src/index.js"
 compatibility_date = "2026-11-20"
 
