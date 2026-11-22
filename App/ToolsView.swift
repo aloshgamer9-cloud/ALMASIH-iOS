@@ -236,6 +236,7 @@ struct ToolsView: View {
                                 )
                             }
                             .buttonStyle(.plain)
+                            .accessibilityIdentifier("tool_button_\(tool.id)")
                         }
                     }
                     .padding()
